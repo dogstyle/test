@@ -60,6 +60,18 @@ PAGE.extend(function(puppy, dog, log) {
 		}
 	}
 
+	// modify add method to include path to test
+	dog.add = function(path, obj, test) {
+		if (typeof path === "undefined") return
+		var arr = path.split(".")
+		if (arr.length < 2) return
+		var group = arr[0]
+			, item = arr[1]
+		if (!puppy[group]) puppy[group] = {}
+		if (test) dog.allTests.push(test)
+		return puppy[group][item] = obj
+	}
+
 	dog.addTests = function(path, func) {
 		if (typeof console === "undefined") return
 		PAGE.wait(path, function(Constructor) {
