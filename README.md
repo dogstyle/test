@@ -7,6 +7,7 @@ then type ```PAGE.runAllTests()``` to see results of example tests.
 ###Legend
 + [Example Code to Test](#example)
 + [Config - determines which tests to load](#config)
++ [Config Free version](#config-free)
 + [Async](#asynchronous-testing)
 + [Synchro](#synchronous-testing)
 + [Future Enhancements](#future-enhancements)
@@ -23,7 +24,7 @@ then type ```PAGE.runAllTests()``` to see results of example tests.
 ## Example ##
 ####   Functions to test
 ```Javascript
-PAGE.add$("Constructors.Dummy", function($base) {
+PAGE.add("Constructors.Dummy", function($base) {
   var dog = {
     addEasy : function(a,b) { return a+b }
     , $base : $base
@@ -56,6 +57,15 @@ PAGE.wait("setTests", function(setTests) {
       , "asynchronousExample.js"
   ])
 })
+```
+
+#### Config Free
+As an alternative method to add tests, in which you can forego loading a config file, add the name of the test file as the third parameter of the `PAGE.add` method.
+
+```JavaScript
+PAGE.add("Constructors.ReallyDumb", function() {
+	...
+}, "synchronousExample.js")
 ```
 
 ###Synchronous Testing
