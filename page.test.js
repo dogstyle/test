@@ -83,11 +83,15 @@ PAGE.extend(function(puppy, dog, log) {
 	}
 
 	dog.runAllTests = function() {
+
 		for (var x in dog.allTests) {
 			;(function(pathToFile) {
 				var scriptId = pathToFile.replace(/\//g, "_")
+					, existingElm = document.getElementById(scriptId)
 
-				if (document.getElementById(scriptId)) return
+				if (existingElm) {
+					existingElm.parentElement.removeChild(existingElm)
+				}
 
 				var fileref = document.createElement('script')
 				fileref.setAttribute("type","text/javascript")
