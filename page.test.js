@@ -351,7 +351,7 @@ PAGE.extend(function(puppy, dog, log) {
 		}
 
 		/* load it if it's not there */
-		PAGE.exists("Utils.CodeCoverage") ? "" : loadScript("/Scripts/testUtils/page.test.codeCoverage.js")
+		PAGE.exists("Utils.CodeCoverage") ? "" : loadScript("testUtils/page.test.codeCoverage.js")
 
 		// Main code coverage
 		PAGE.wait("Utils.CodeCoverage", function(CodeCoverage) {
