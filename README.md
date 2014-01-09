@@ -1,3 +1,5 @@
+### There have been recent updates that are not reflected in this readme .... be advised ###
+
 ### Simple, integrated, console based testing for the PAGE framework ######
 
 Allows easy initiation of testing over all testable code written within the PAGE(dog) framework.
