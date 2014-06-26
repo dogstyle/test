@@ -27,6 +27,11 @@ PAGE.extend(function(puppy, dog, log) {
 		, totalFail : 0
 		, codeCoverage : undefined /* CodeCoverage(hashOfScriptsToCheck, test) */
 		, hasCodeCoverage : false
+
+		, SwapLib : dog.SwapLib = function(hash) { return this }
+
+		, Mock : function(obj) { }
+
 	}
 
 	var ref = {}
@@ -53,6 +58,45 @@ PAGE.extend(function(puppy, dog, log) {
 			}
 		}
 		return puppy[group][item] = obj
+	}
+
+	dog.test.SwapLib = dog.SwapLib = function(hash) {
+		// used in testing, to swap out existing libraries for mock libraries
+		// call it like this
+		//	var swap = PAGE.SwapLib({
+		//		"Modules.dataService" : {}
+		//		, "Modules.commonMessage" : { someMethod : function(){} }
+		//		, "Constructors.YourConstructor" : function(){}
+		//		, "Constructors.AnotherConstructor" : function(){}
+		//	})
+		//
+		//	then to return, do swap.restore()
+
+		var pup = {
+			restore : undefined // function(){}
+			, store : {}
+		}
+
+		function init() {
+
+			debugger
+
+			for (var x in hash) {
+				pup.store[x] = dog.remove(x, puppy, hash[x])
+			}
+
+		}
+
+		pup.restore = function() {
+			for (var x in pup.store) {
+				dog.spawn(x, pup.store[x])
+				delete pup.store[x]
+			}
+		}
+
+		init()
+
+		return pup
 	}
 
 	function clean(str) { return str.replace(/\./g,"_") }
@@ -107,6 +151,21 @@ PAGE.extend(function(puppy, dog, log) {
 	/* inherit from PAGE */
 	var loadScript = dog.loadScript
 
+	dog.test.Mock = function(name, eventsArray, func) {
+		eventsArray = eventsArray || [ ]
+		var triggers = { }
+
+		function hitEvent(name) {
+			if (triggers[name] !== undefined) triggers[name] = true
+		}
+
+		var obj = func(hitEvent)
+
+		for (var x = 0; x < eventsArray.length; x++) triggers[x] = false
+
+		obj.__eventsArray = eventsArray
+	}
+
 	dog.addTests = function(path, func /* (Constructor, Test, TestWaiter, comparer) */ ) {
 
 		var scout = {
@@ -124,8 +183,16 @@ PAGE.extend(function(puppy, dog, log) {
 					, construct : path
 					, func : func
 					, type : "sync"
+					, testName : testName
+					, testPath : dtest.lastTest
 				}
 				results.push(result)
+
+				// handles external call
+				if (dog.test.externalCall) {
+					dog.test.externalCall(result)
+				}
+
 				if (result.result) {
 					console.groupCollapsed("%c " + result.name + "%c \u2714", "color:gray; font-weight:normal;", "color:rgb(54, 231, 54)")
 					console.log(result)
@@ -154,7 +221,16 @@ PAGE.extend(function(puppy, dog, log) {
 
 			function call(result) {
 				result.type = "async"
+				result.testName = testName
+				result.seriesCount = series.length
+				result.testPath = dtest.lastTest
 				results.push(result)
+
+				// handles external call
+				if (dog.test.externalCall) {
+					dog.test.externalCall(result)
+				}
+
 				if (result.result) {
 					console.groupCollapsed("%c " + testName + ": " + result.name + "%c \u2714", "color:gray; font-weight:normal;", "color:rgb(54, 231, 54)")
 					console.log(result)
@@ -266,10 +342,6 @@ PAGE.extend(function(puppy, dog, log) {
 						lastTestMap.coverage = lastConstructorCounts
 
 						console.group("%c Coverage Info", "font-weight:normal; color:#aaa;")
-						// console.log(lastTestMap.coverage)
-						// console.log("All Test Data")
-						// console.log(lastTestMap)
-
 
 						;(function() {
 							var tempMissesList = {}
@@ -343,7 +415,7 @@ PAGE.extend(function(puppy, dog, log) {
 	}
 
 	/* this is to add coverage stats for all tests */
-	dog.addCoverage = function(callback) {
+	dog.addCoverage = function addCoverage(callback) {
 
 		if (dtest.hasCodeCoverage) {
 			typeof callback === "function" && callback(dtest)
@@ -351,7 +423,7 @@ PAGE.extend(function(puppy, dog, log) {
 		}
 
 		/* load it if it's not there */
-		PAGE.exists("Utils.CodeCoverage") ? "" : loadScript("testUtils/page.test.codeCoverage.js")
+		PAGE.exists("Utils.CodeCoverage") ? "" : loadScript("/Scripts/testUtils/page.test.codeCoverage.js")
 
 		// Main code coverage
 		PAGE.wait("Utils.CodeCoverage", function(CodeCoverage) {
@@ -368,18 +440,26 @@ PAGE.extend(function(puppy, dog, log) {
 		return dtest
 	}
 
-	dog.runSubTests = function() {
+	function outputFlag() {
+		console.log("%cPAҨE%c❄%cTEST","padding-left:10px; font-size:42px; color:rgb(229, 229, 209); font-weight:normal; background-color:rgb(229,229,209); color:white;", "font-size:42px; color:rgb(72, 72, 138); background-color:rgb(229,229,209); font-weight:normal;", "font-size:42px; color:rgb(229, 229, 209); font-weight:normal; background-color:rgb(229,229,209); color:white; padding-right:10px;")
+	}
+
+	dog.info = function() {
+		outputFlag()
+		console.dir(PAGE)
+	}
+
+	dog.runSubTests = function runSubTests() {
 		dtest.results.length = 0
 		dtest.activeTests = dtest.activeTests.concat( dog.allTestFiles )
-		console.group("%cPAGE%c♗%cTEST%c〄k","font-size:42px; color:rgb(229, 229, 209); font-weight:normal;", "font-size:42px; color:rgb(233, 227, 80); font-weight:normal;", "font-size:42px; color:rgb(229, 229, 209); font-weight:normal;", "font-size:16px; color:black; font-weight:normal;")
+		console.group("%cPAҨE%c❄%cTƧET","padding-left:10px; font-size:42px; color:rgb(229, 229, 209); font-weight:normal; background-color:rgb(229,229,209); color:white;", "font-size:42px; color:rgb(72, 72, 138); background-color:rgb(229,229,209); font-weight:normal;", "font-size:42px; color:rgb(229, 229, 209); font-weight:normal; background-color:rgb(229,229,209); color:white; padding-right:10px;")
 
-		console.log("PAGE.test : Version 1 : DEC 30 2013")
 		subRunTest( dtest.activeTests.shift() )
 
-		return "running all tests, build created 12-24-2013"
+		return "running all tests, build created 1-13-2013"
 }
 
-	dog.runAllTests = function() {
+	dog.runAllTests = dog.run = function runAllTests() {
 		dog.addCoverage( dog.runSubTests )
 		return "Release the Kraken!"
 	}
@@ -391,7 +471,7 @@ PAGE.extend(function(puppy, dog, log) {
 		console.group("tests")
 	}
 
-	dog.runTest = function(path) {
+	dog.runTest = function runTest (path) {
 		dtest.lastTest = path
 		dog.addCoverage( function() {
 			dtest.results.length = 0
