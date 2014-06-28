@@ -27,11 +27,7 @@ PAGE.extend(function(puppy, dog, log) {
 		, totalFail : 0
 		, codeCoverage : undefined /* CodeCoverage(hashOfScriptsToCheck, test) */
 		, hasCodeCoverage : false
-
-		, SwapLib : dog.SwapLib = function(hash) { return this }
-
 		, Mock : function(obj) { }
-
 	}
 
 	var ref = {}
@@ -58,45 +54,6 @@ PAGE.extend(function(puppy, dog, log) {
 			}
 		}
 		return puppy[group][item] = obj
-	}
-
-	dog.test.SwapLib = dog.SwapLib = function(hash) {
-		// used in testing, to swap out existing libraries for mock libraries
-		// call it like this
-		//	var swap = PAGE.SwapLib({
-		//		"Modules.dataService" : {}
-		//		, "Modules.commonMessage" : { someMethod : function(){} }
-		//		, "Constructors.YourConstructor" : function(){}
-		//		, "Constructors.AnotherConstructor" : function(){}
-		//	})
-		//
-		//	then to return, do swap.restore()
-
-		var pup = {
-			restore : undefined // function(){}
-			, store : {}
-		}
-
-		function init() {
-
-			debugger
-
-			for (var x in hash) {
-				pup.store[x] = dog.remove(x, puppy, hash[x])
-			}
-
-		}
-
-		pup.restore = function() {
-			for (var x in pup.store) {
-				dog.spawn(x, pup.store[x])
-				delete pup.store[x]
-			}
-		}
-
-		init()
-
-		return pup
 	}
 
 	function clean(str) { return str.replace(/\./g,"_") }
@@ -166,8 +123,7 @@ PAGE.extend(function(puppy, dog, log) {
 		obj.__eventsArray = eventsArray
 	}
 
-	dog.addTests = function(path, func /* (Constructor, Test, TestWaiter, comparer) */ ) {
-
+	dog.addTests = function(path, func /* (Constructor, Test, TestWaiter, comparer) */, isIntegration) {
 		var scout = {
 			syncTests : []
 			, asyncTests : []
@@ -404,10 +360,21 @@ PAGE.extend(function(puppy, dog, log) {
 
 		}, 1000)
 
-		PAGE.wait(path, function(Constructor) {
-			typeof func === "function" && func( Constructor, Test, TestWaiter, comparer )
-		})
+		if (isIntegration) {
+			typeof func === "function" && func(Test, TestWaiter, comparer )
+		} else {
+			PAGE.wait(path, function(Constructor) {
+				typeof func === "function" && func( Constructor, Test, TestWaiter, comparer )
+			})
+		}
 
+	}
+
+	dog.integrationTest = function() {
+		var args = Array.prototype.slice.call(arguments, 0);
+		args.push(true)
+		args.unshift("integrationTest")
+		dog.addTests.apply(this, args)
 	}
 
 	dog.setTests = function(arr) {
@@ -483,4 +450,3 @@ PAGE.extend(function(puppy, dog, log) {
 	}
 
 })
-
